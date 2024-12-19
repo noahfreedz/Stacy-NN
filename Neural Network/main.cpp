@@ -2,6 +2,7 @@
 #include "main.h"
 
 #pragma region Other Includes
+//Pre Stacy
 #include <iostream>
 #include <map>
 #include <vector>
@@ -33,13 +34,17 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+
+//Post Rebecca
+#include <Eigen/Dense> // Used for Matrices
 #pragma endregion
 
 using namespace std;
+using namespace Eigen;
 
 namespace Stacy {
 public:
 
 private:
-
+    Matrix
 }
