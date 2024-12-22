@@ -12,10 +12,14 @@ CPMAddPackage("gh:SFML/SFML#2.6.1")
 # Define the path to the SFML library directory
 set(SFML_DLL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake-build-debug/_deps/sfml-build/lib")
 
+file(COPY ../Stacy-NN/Data/set1-images.idx3-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ../Stacy-NN/Data/set1-labels.idx1-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ../Stacy-NN/Data/Testing-Data-Images.idx3-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ../Stacy-NN/Data/TestingData-labels.idx1-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
+# Copy all required SFML DLLs to the build directory
 file(GLOB SFML_DLLS "${SFML_DLL_PATH}/*.dll")
 file(COPY ${SFML_DLLS} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
 
 CPMAddPackage(
         NAME Eigen
@@ -27,7 +31,10 @@ CPMAddPackage(
 
 add_executable(Stacy_NN
         "Neural Network/main.cpp"
-        "Neural Network/main.h")
+        "Neural Network/main.h"
+        SVM/SVM.cpp
+        SVM/SVM.h
+        SVM/Main_SVM.cpp)
 
 target_include_directories(Stacy_NN
         PUBLIC

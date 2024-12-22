@@ -1,16 +1,45 @@
-//
-// Created by gking on 12/22/2024.
-//
-
-#ifndef SVM_H
-#define SVM_H
+#include <iostream>
+#include <ostream>
+#include <sstream>
+#include <vector>
 
 
 
-class SVM {
+using namespace std;
+namespace stacy {
+    class MNSTData {
+    public:
+        vector<double> data;
+        int lable;
+    };
 
-};
+    class SVMData
+    {
+     public:
+        vector<double> W; // this is the weights or the direction of the hyperplain
+        int B; // this is the Bais or the offest of the hyperplain from the origain
+    };
 
+    class SVMMulti {
+    public:
+        SVMMulti(const double learningRate, const double Cost);
+        double predictOne(const vector<double>& image, const vector<double>& weights, double bias);
 
+        void train(const vector<MNSTData>& MNSTData, vector<SVMData>& SVMData, const int num_epochs );
+        private:
+         double C;
+         double L;
+    };
 
-#endif //SVM_H
+        class SVM{
+        public:
+            SVM(const double cost, const double learningRate);
+            double predictOne(const vector<double>& image, const vector<double>& weights, double bias);
+            void train(const vector<MNSTData>& MNSTData, int TargetNumber, SVMData currentClass);
+
+        private:
+            double C; // this the cost for getting things wrong
+            double L; // this is the learning rate
+
+        };
+}
