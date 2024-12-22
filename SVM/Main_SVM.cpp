@@ -142,6 +142,25 @@ void evaluateModel(const vector<MNSTData>& testData, const vector<SVMData>& clas
     cout << "Accuracy: " << accuracy << "%" << endl;
 }
 
+void evaluateSingleImage(const MNSTData& sample, const vector<SVMData>& classifiers) {
+    double bestScore = -std::numeric_limits<double>::infinity();
+    int prediction = -1;
+    vector<double> allScores(10); // Store scores for all digits
+
+    // Get prediction from each classifier
+    for(int digit = 0; digit < 10; digit++) {
+        double score = SVM(1, 0.01).predictOne(sample.data, classifiers[digit].W, classifiers[digit].B);
+        allScores[digit] = score;
+
+        if(score > bestScore) {
+            bestScore = score;
+            prediction = digit;
+        }
+    }
+
+    cout <<"Our predticion is that it is a :" << prediction << endl;
+}
+
 
 int main() {
     // Parameters
@@ -149,9 +168,9 @@ int main() {
     const int numTestImages = 10000;
     const int imageRows = 28;
     const int imageCols = 28;
-    const double learningRate = 0.001;
-    const double cost = 7.5;
-    const int numEpochs = 7;
+    const double learningRate = 0.00007;
+    const double cost = .01;
+    const int numEpochs = 25;
 
     // Load training data
     cout << "Loading training data..." << endl;
@@ -168,7 +187,6 @@ int main() {
     // Initialize SVM classifiers
     cout << "Initializing classifiers..." << endl;
     auto classifiers = initializeSVMClassifiers(imageRows * imageCols);
-
     // Create and train multi-class SVM
     cout << "Training model..." << endl;
     stacy::SVMMulti multiSvm(learningRate, cost);
@@ -177,6 +195,17 @@ int main() {
     // Evaluate on test set
     cout << "Evaluating model..." << endl;
     evaluateModel(testData, classifiers);
+
+    while (true) {
+        int number;
+        std::cout << "Enter a number: ";
+        std::cin >> number;
+        printImages images(testData);
+        images.printImage(number);
+        evaluateSingleImage(testData[number], classifiers);
+    }
+
+
 
     return 0;
 }
