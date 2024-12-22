@@ -150,8 +150,8 @@ int main() {
     const int imageRows = 28;
     const int imageCols = 28;
     const double learningRate = 0.001;
-    const double cost = 1.0;
-    const int numEpochs = 60;
+    const double cost = 7.5;
+    const int numEpochs = 7;
 
     // Load training data
     cout << "Loading training data..." << endl;
@@ -171,7 +171,7 @@ int main() {
 
     // Create and train multi-class SVM
     cout << "Training model..." << endl;
-    stacy::SVMMulti multiSvm(1.2, 7.5);
+    stacy::SVMMulti multiSvm(learningRate, cost);
     multiSvm.train(trainData, classifiers, numEpochs);
 
     // Evaluate on test set
