@@ -12,17 +12,17 @@ CPMAddPackage("gh:SFML/SFML#2.6.1")
 # Define the path to the SFML library directory
 set(SFML_DLL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake-build-debug/_deps/sfml-build/lib")
 
-# Copy all required SFML DLLs to the build directory
+
 file(GLOB SFML_DLLS "${SFML_DLL_PATH}/*.dll")
 file(COPY ${SFML_DLLS} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-# Add Eigen - note the DOWNLOAD_ONLY YES flag!
+
 CPMAddPackage(
         NAME Eigen
         GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
         GIT_TAG 3.4-rc1
         VERSION 3.4.0
-        DOWNLOAD_ONLY YES  # This is crucial - Eigen is header-only!
+        DOWNLOAD_ONLY YES
 )
 
 add_executable(Stacy_NN
