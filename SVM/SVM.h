@@ -2,9 +2,9 @@
 #include <ostream>
 #include <sstream>
 #include <vector>
-#include <SFML/Graphics.hpp>
 #include <vector>
 #include <string>
+#include <fstream>
 #include <iostream>
 
 
@@ -85,4 +85,83 @@ namespace stacy {
         }
         vector<MNSTData> imageData;
     };
+
+    class SVMPersistence {
+    public:
+        // Save SVMData to a binary file
+        static void SaveSVMData(const std::vector<SVMData>& classifiers, const std::string& filename) {
+            std::ofstream outFile(filename, std::ios::binary);
+            if (!outFile) {
+                throw std::runtime_error("Cannot open file for writing: " + filename);
+            }
+
+            // Write number of classifiers
+            size_t numClassifiers = classifiers.size();
+            outFile.write(reinterpret_cast<const char*>(&numClassifiers), sizeof(numClassifiers));
+
+            // Write each classifier
+            for (const auto& classifier : classifiers) {
+                // Write weights vector size
+                size_t weightSize = classifier.W.size();
+                outFile.write(reinterpret_cast<const char*>(&weightSize), sizeof(weightSize));
+
+                // Write weights
+                if (!classifier.W.empty()) {
+                    outFile.write(reinterpret_cast<const char*>(classifier.W.data()),
+                                  weightSize * sizeof(double));
+                }
+
+                // Write bias
+                outFile.write(reinterpret_cast<const char*>(&classifier.B), sizeof(classifier.B));
+            }
+
+            if (!outFile) {
+                throw std::runtime_error("Error writing to file: " + filename);
+            }
+            outFile.close();
+        }
+
+        // Load SVMData from a binary file
+        static std::vector<SVMData> LoadSVMData(const std::string& filename) {
+            std::ifstream inFile(filename, std::ios::binary);
+            if (!inFile) {
+                throw std::runtime_error("Cannot open file for reading: " + filename);
+            }
+
+            std::vector<SVMData> classifiers;
+
+            // Read number of classifiers
+            size_t numClassifiers;
+            inFile.read(reinterpret_cast<char*>(&numClassifiers), sizeof(numClassifiers));
+
+            // Read each classifier
+            for (size_t i = 0; i < numClassifiers; ++i) {
+                SVMData classifier;
+
+                // Read weights vector size
+                size_t weightSize;
+                inFile.read(reinterpret_cast<char*>(&weightSize), sizeof(weightSize));
+
+                // Read weights
+                classifier.W.resize(weightSize);
+                if (!classifier.W.empty()) {
+                    inFile.read(reinterpret_cast<char*>(classifier.W.data()),
+                                weightSize * sizeof(double));
+                }
+
+                // Read bias
+                inFile.read(reinterpret_cast<char*>(&classifier.B), sizeof(classifier.B));
+
+                classifiers.push_back(classifier);
+            }
+
+            if (!inFile) {
+                throw std::runtime_error("Error reading from file: " + filename);
+            }
+            inFile.close();
+
+            return classifiers;
+        }
+    };
 }
+

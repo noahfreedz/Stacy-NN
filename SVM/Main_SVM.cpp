@@ -7,7 +7,15 @@
 
 
 using namespace stacy;
-// Helper function for random number generation
+// Helper function for random number generation\
+
+int32_t swap32(int32_t value) {
+    return ((value & 0xFF000000) >> 24) |
+           ((value & 0x00FF0000) >> 8) |
+           ((value & 0x0000FF00) << 8) |
+           ((value & 0x000000FF) << 24);
+}
+
 double getRandom(double min, double max) {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -32,10 +40,10 @@ vector< vector<double>> readMNISTImages(const  string& filePath, int numImages, 
         file.read(reinterpret_cast<char*>(&cols), 4);
 
         // Convert from big-endian to little-endian if needed
-        magicNumber = __builtin_bswap32(magicNumber);
-        numberOfImages = __builtin_bswap32(numberOfImages);
-        rows = __builtin_bswap32(rows);
-        cols = __builtin_bswap32(cols);
+        magicNumber = swap32(magicNumber);
+        numberOfImages = swap32(numberOfImages);
+        rows = swap32(rows);
+        cols = swap32(cols);
 
         for (int i = 0; i < numImages; ++i) {
              vector<double> image;
@@ -67,8 +75,8 @@ vector<int> readMNISTLabels(const  string& filePath, int numLabels) {
             file.read(reinterpret_cast<char*>(&numberOfLabels), 4);
 
             // Convert from big-endian to little-endian if needed
-            magicNumber = __builtin_bswap32(magicNumber);
-            numberOfLabels = __builtin_bswap32(numberOfLabels);
+            magicNumber = swap32(magicNumber);
+            numberOfLabels = swap32(numberOfLabels);
 
             for (int i = 0; i < numLabels; ++i) {
                 unsigned char label = 0;

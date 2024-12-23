@@ -2,30 +2,39 @@ cmake_minimum_required(VERSION 3.27)
 project(Stacy_NN)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-# Include CPM for package management
 include(get_cpm.cmake)
 
-# Add SFML
-CPMAddPackage("gh:SFML/SFML#2.6.1")
-CPMAddPackage("gh:raysan5/raylib#5.5")
-CPMAddPackage("gh:raysan5/raygui#4.0")
-CPMAddPackage("gh:raysan5/rpng#1.0")
+set(ASIO_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/asio/include)
 
-# Define the path to the SFML library directory
-set(SFML_DLL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake-build-debug/_deps/sfml-build/lib")
+CPMAddPackage(
+        NAME asio
+        URL https://github.com/chriskohlhoff/asio/archive/asio-1-24-0.tar.gz
+        VERSION 1.24.0
+        DOWNLOAD_ONLY YES
+)
+
+if (asio_ADDED)
+    add_library(asio INTERFACE)
+    target_include_directories(asio INTERFACE ${asio_SOURCE_DIR}/asio/include)
+    add_library(asio::asio ALIAS asio)
+endif()
+
+CPMAddPackage(
+        NAME Crow
+        GITHUB_REPOSITORY CrowCpp/Crow
+        VERSION 1.2.0
+        OPTIONS
+        "CROW_BUILD_EXAMPLES OFF"
+        "CROW_BUILD_TESTS OFF"
+        "CROW_INSTALL OFF"
+)
 
 file(COPY ../Stacy-NN/Data/set1-images.idx3-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ../Stacy-NN/Data/set1-labels.idx1-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ../Stacy-NN/Data/Testing-Data-Images.idx3-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ../Stacy-NN/Data/TestingData-labels.idx1-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-# Copy all required SFML DLLs to the build directory
-file(GLOB SFML_DLLS "${SFML_DLL_PATH}/*.dll")
-file(COPY ${SFML_DLLS} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-file(GLOB RAYLIB_DLLS "${CMAKE_BINARY_DIR}/_deps/raylib-build/raylib/*.dll")
-file(COPY ${RAYLIB_DLLS} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 CPMAddPackage(
         NAME Eigen
@@ -45,12 +54,26 @@ add_executable(Stacy_NN
 add_executable(SVMTEST
         SVM/SVM.cpp
         SVM/SVM.h
-        SVM/grid.cpp
-        SVM/grid.h
-        SVM/Test.cpp)
+        SVM/Test.cpp
+)
 
-target_include_directories(Stacy_NN PUBLIC "Neural Network" ${CMAKE_BINARY_DIR}/_deps/eigen-src)
+target_include_directories(Stacy_NN PUBLIC
+        "Neural Network"
+        ${CMAKE_BINARY_DIR}/_deps/eigen-src
+        ${ASIO_INCLUDE_DIR}
+)
 
+target_include_directories(SVMTEST PUBLIC
+        ${ASIO_INCLUDE_DIR}
+)
 
-target_link_libraries(Stacy_NN PUBLIC sfml-graphics sfml-window sfml-system)
-target_link_libraries(SVMTEST PUBLIC sfml-graphics sfml-window sfml-system raylib)
+target_compile_definitions(SVMTEST PRIVATE
+        _WIN32_WINNT=0x0601
+)
+
+target_link_libraries(SVMTEST PRIVATE
+        Crow::Crow
+)
+
+target_link_libraries(Stacy_NN PUBLIC
+)
