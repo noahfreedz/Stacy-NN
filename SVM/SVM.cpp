@@ -4,8 +4,6 @@
 #include <sstream>
 #include <cmath>
 #include <vector>
-#include <iomanip>  // For formatting output
-#include "SFML/Window/Keyboard.hpp"
 
 using namespace std;
 
