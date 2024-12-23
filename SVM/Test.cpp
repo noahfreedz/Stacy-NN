@@ -7,6 +7,8 @@
 #include <ostream>
 #include <fstream>
 #include <cstdlib>
+#include <filesystem>
+#include <cerrno>
 
 using namespace stacy;
 
@@ -188,41 +190,34 @@ string loadHtmlTemplate() {
        }
 
        async function predict() {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = 28;
-            tempCanvas.height = 28;
-            const tempCtx = tempCanvas.getContext('2d');
+           const tempCanvas = document.createElement('canvas');
+           tempCanvas.width = 28;
+           tempCanvas.height = 28;
+           const tempCtx = tempCanvas.getContext('2d');
 
-            // Clear canvas with white background
-            tempCtx.fillStyle = 'white';
-            tempCtx.fillRect(0, 0, 28, 28);
+           tempCtx.drawImage(canvas, 0, 0, 28, 28);
+           const imageData = tempCtx.getImageData(0, 0, 28, 28);
 
-            // Draw input image centered and scaled
-            tempCtx.drawImage(canvas, 0, 0, 28, 28);
+           const pixels = [];
+           for (let i = 0; i < imageData.data.length; i += 4) {
+               const grayscale = (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
+               pixels.push(grayscale / 255);
+           }
 
-            const imageData = tempCtx.getImageData(0, 0, 28, 28);
+           try {
+               const response = await fetch('/predict', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ image: pixels })
+               });
 
-            const pixels = [];
-            for (let i = 0; i < imageData.data.length; i += 4) {
-                // Convert to grayscale, invert, and ensure 0-255 range
-                const grayscale = 255 - Math.round((imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3);
-                pixels.push(grayscale);
-            }
-
-            try {
-                const response = await fetch('/predict', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: pixels })
-                });
-
-                const data = await response.json();
-                document.getElementById('prediction').textContent =
-                    'Prediction: ' + data.prediction;
-            } catch (error) {
-                console.error('Prediction failed:', error);
-            }
-        }
+               const data = await response.json();
+               document.getElementById('prediction').textContent =
+                   'Prediction: ' + data.prediction;
+           } catch (error) {
+               console.error('Prediction failed:', error);
+           }
+       }
    </script>
 </body>
 </html>)DELIMITER";
@@ -237,69 +232,22 @@ int main() {
    const double cost = .01;
    const int numEpochs = 7;
 
-   crow::SimpleApp app;
+    crow::SimpleApp app;
+    SVMMulti multiSvm(learningRate, cost);
 
-   // cout << "Loading training data..." << endl;
-   // auto trainImages = readMNISTImages("set1-images.idx3-ubyte", numTrainImages, imageRows, imageCols);
-   // auto trainLabels = readMNISTLabels("set1-labels.idx1-ubyte", numTrainImages);
-   // auto trainData = convertToMNSTDataFormat(trainImages, trainLabels);
-   //
-   // cout << "Loading test data..." << endl;
-   // auto testImages = readMNISTImages("Testing-Data-Images.idx3-ubyte", numTestImages, imageRows, imageCols);
-   // auto testLabels = readMNISTLabels("TestingData-labels.idx1-ubyte", numTestImages);
-   // auto testData = convertToMNSTDataFormat(testImages, testLabels);
-   //
-   // cout << "Initializing classifiers..." << endl;
-   // auto classifiers = initializeSVMClassifiers(imageRows * imageCols);
-   //
-   // cout << "Training model..." << endl;
-   // stacy::SVMMulti multiSvm(learningRate, cost);
-   // multiSvm.train(trainData, classifiers, numEpochs);
-   //
-   // cout << "Evaluating model..." << endl;
-   // evaluateModel(testData, classifiers);
-    auto classifiers = SVMPersistence::LoadSVMData("model.bin");
+   auto trainImages = readMNISTImages("set1-images.idx3-ubyte", numTrainImages, imageRows, imageCols);
+   auto trainLabels = readMNISTLabels("set1-labels.idx1-ubyte", numTrainImages);
+   auto trainData = convertToMNSTDataFormat(trainImages, trainLabels);
 
-   CROW_ROUTE(app, "/")([]() {
-       return loadHtmlTemplate();
-   });
+   auto testImages = readMNISTImages("Testing-Data-Images.idx3-ubyte", numTestImages, imageRows, imageCols);
+   auto testLabels = readMNISTLabels("TestingData-labels.idx1-ubyte", numTestImages);
+   auto testData = convertToMNSTDataFormat(testImages, testLabels);
 
-   CROW_ROUTE(app, "/predict").methods("POST"_method)
-   ([&classifiers](const crow::request& req) {
-       auto body = crow::json::load(req.body);
-       std::vector<double> pixels;
+    auto classifiers = initializeSVMClassifiers(imageRows * imageCols);
 
-       for (const auto& val : body["image"]) {
-           pixels.push_back(val.d());
-       }
+    multiSvm.train(trainData, classifiers, numEpochs);
+    evaluateModel(testData, classifiers);
 
-       MNSTData sample;
-       sample.data = pixels;
-
-       double bestScore = -std::numeric_limits<double>::infinity();
-       int prediction = -1;
-
-       for(int digit = 0; digit < 10; digit++) {
-           double score = SVM(1, 0.01).predictOne(sample.data, classifiers[digit].W, classifiers[digit].B);
-           if(score > bestScore) {
-               bestScore = score;
-               prediction = digit;
-           }
-       }
-
-       cout << "Scores: ";
-        for(int digit = 0; digit < 10; digit++) {
-            double score = SVM(1, 0.01).predictOne(sample.data, classifiers[digit].W, classifiers[digit].B);
-            cout << "Digit " << digit << ": " << score << " ";
-        }
-    cout << endl;
-
-    return crow::json::wvalue({{"prediction", prediction}});
-   });
-
-   cout << "Starting web server on port 3000..." << endl;
-   app.port(3000).run();
-    SVMPersistence::SaveSVMData(classifiers, "../model.bin");
 
    return 0;
 }
