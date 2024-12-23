@@ -25,17 +25,20 @@ CPMAddPackage(
         DOWNLOAD_ONLY YES  # This is crucial - Eigen is header-only!
 )
 
+# Add the executable target, including both source files
 add_executable(Stacy_NN
-        "Neural Network/main.cpp"
-        "Neural Network/main.h")
+        "Neural Network/main.cpp"         # Test file
+        "test_network.cpp"
+)
 
+# Add include directories for Neural Network and Eigen
 target_include_directories(Stacy_NN
         PUBLIC
         "Neural Network"
         ${CMAKE_BINARY_DIR}/_deps/eigen-src
 )
 
-# Remove Eigen from target_link_libraries since it's header-only
+# Link SFML libraries
 target_link_libraries(Stacy_NN
         PUBLIC
         sfml-graphics
