@@ -11,6 +11,7 @@
 
 using namespace std;
 namespace stacy {
+
     class MNSTData {
     public:
         vector<double> data;

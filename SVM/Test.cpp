@@ -1,13 +1,17 @@
-#include "SVM.h"
 #include <iostream>
 #include <random>
 #include <ctime>
 #include <ostream>
 #include <fstream>
 
+#include "grid.h"
+#include "crow.h"
+
 
 using namespace stacy;
+
 // Helper function for random number generation
+
 double getRandom(double min, double max) {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -197,12 +201,9 @@ int main() {
     evaluateModel(testData, classifiers);
 
     while (true) {
-        int number;
-        std::cout << "Enter a number: ";
-        std::cin >> number;
-        printImages images(testData);
-        images.printImage(number);
-        evaluateSingleImage(testData[number], classifiers);
+        Grid grid;
+        const MNSTData gridData = grid.getGridOfSquares();
+        evaluateSingleImage(gridData, classifiers);
     }
 
 
