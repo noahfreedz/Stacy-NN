@@ -6,8 +6,6 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 include(get_cpm.cmake)
 
-set(ASIO_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/asio/include)
-
 CPMAddPackage(
         NAME asio
         URL https://github.com/chriskohlhoff/asio/archive/asio-1-24-0.tar.gz
@@ -31,10 +29,12 @@ CPMAddPackage(
         "CROW_INSTALL OFF"
 )
 
+# File copies remain the same
 file(COPY ../Stacy-NN/Data/set1-images.idx3-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ../Stacy-NN/Data/set1-labels.idx1-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ../Stacy-NN/Data/Testing-Data-Images.idx3-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ../Stacy-NN/Data/TestingData-labels.idx1-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_SOURCE_DIR}/WEB DESTINATION ${CMAKE_BINARY_DIR})
 
 CPMAddPackage(
         NAME Eigen
@@ -47,9 +47,7 @@ CPMAddPackage(
 add_executable(Stacy_NN
         "Neural Network/main.cpp"
         "Neural Network/main.h"
-        SVM/SVM.cpp
-        SVM/SVM.h
-        SVM/Main_SVM.cpp)
+         "Neural Network/test_network.cpp")
 
 add_executable(SVMTEST
         SVM/SVM.cpp
@@ -60,11 +58,6 @@ add_executable(SVMTEST
 target_include_directories(Stacy_NN PUBLIC
         "Neural Network"
         ${CMAKE_BINARY_DIR}/_deps/eigen-src
-        ${ASIO_INCLUDE_DIR}
-)
-
-target_include_directories(SVMTEST PUBLIC
-        ${ASIO_INCLUDE_DIR}
 )
 
 target_compile_definitions(SVMTEST PRIVATE
@@ -73,7 +66,13 @@ target_compile_definitions(SVMTEST PRIVATE
 
 target_link_libraries(SVMTEST PRIVATE
         Crow::Crow
+        asio::asio
+        ws2_32
+        mswsock
 )
 
 target_link_libraries(Stacy_NN PUBLIC
+        asio::asio
+        ws2_32
+        mswsock
 )
