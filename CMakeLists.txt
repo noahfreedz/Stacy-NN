@@ -31,49 +31,26 @@ CPMAddPackage(
         "CROW_INSTALL OFF"
 )
 
-<<<<<<< HEAD
-# Copy all required SFML DLLs to the build directory
-file(GLOB SFML_DLLS "${SFML_DLL_PATH}/*.dll")
-file(COPY ${SFML_DLLS} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-# Add Eigen - note the DOWNLOAD_ONLY YES flag!
-=======
 file(COPY ../Stacy-NN/Data/set1-images.idx3-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ../Stacy-NN/Data/set1-labels.idx1-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ../Stacy-NN/Data/Testing-Data-Images.idx3-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ../Stacy-NN/Data/TestingData-labels.idx1-ubyte DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
->>>>>>> ea141bf4538815d2597b6246e1f239c6b8faac90
 CPMAddPackage(
         NAME Eigen
         GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
         GIT_TAG 3.4-rc1
         VERSION 3.4.0
-        DOWNLOAD_ONLY YES  # This is crucial - Eigen is header-only!
+        DOWNLOAD_ONLY YES
 )
 
-# Add the executable target, including both source files
 add_executable(Stacy_NN
-        "Neural Network/main.cpp"         # Test file
-        "test_network.cpp"
-)
+        "Neural Network/main.cpp"
+        "Neural Network/main.h"
+        SVM/SVM.cpp
+        SVM/SVM.h
+        SVM/Main_SVM.cpp)
 
-<<<<<<< HEAD
-# Add include directories for Neural Network and Eigen
-target_include_directories(Stacy_NN
-        PUBLIC
-        "Neural Network"
-        ${CMAKE_BINARY_DIR}/_deps/eigen-src
-)
-
-# Link SFML libraries
-target_link_libraries(Stacy_NN
-        PUBLIC
-        sfml-graphics
-        sfml-window
-        sfml-system
-)
-=======
 add_executable(SVMTEST
         SVM/SVM.cpp
         SVM/SVM.h
@@ -100,4 +77,3 @@ target_link_libraries(SVMTEST PRIVATE
 
 target_link_libraries(Stacy_NN PUBLIC
 )
->>>>>>> ea141bf4538815d2597b6246e1f239c6b8faac90

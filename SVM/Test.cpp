@@ -9,6 +9,9 @@
 #include <cstdlib>
 #include <filesystem>
 #include <cerrno>
+#include <sstream>
+#include <numeric>
+#include <algorithm>
 
 using namespace stacy;
 
@@ -134,120 +137,222 @@ void evaluateModel(const vector<MNSTData>& testData, const vector<SVMData>& clas
    cout << "Accuracy: " << accuracy << "%" << endl;
 }
 
-string loadHtmlTemplate() {
-   return R"DELIMITER(<!DOCTYPE html>
-<html>
-<head>
-   <title>MNIST Digit Recognition</title>
-   <style>
-       body {
-           font-family: Arial;
-           margin: 0;
-           padding: 20px;
-       }
-       canvas { border: 1px solid #ccc; }
-       button { margin: 5px; padding: 8px 16px; }
-   </style>
-</head>
-<body>
-   <canvas id="drawingCanvas" width="280" height="280"></canvas>
-   <br>
-   <button onclick="clearCanvas()">Clear</button>
-   <button onclick="predict()">Predict</button>
-   <div id="prediction"></div>
-   <script>
-       const canvas = document.getElementById('drawingCanvas');
-       const ctx = canvas.getContext('2d');
-       let isDrawing = false;
+void evaluateSingleImage(const MNSTData& sample, const std::vector<SVMData>& classifiers, int& prediction, std::vector<double>& allScores) {
+    double bestScore = -std::numeric_limits<double>::infinity();
+    prediction = -1;
 
-       ctx.fillStyle = 'white';
-       ctx.fillRect(0, 0, canvas.width, canvas.height);
-       ctx.strokeStyle = 'black';
-       ctx.lineWidth = 12;
-       ctx.lineCap = 'round';
+    // Get prediction from each classifier
+    for(int digit = 0; digit < 10; digit++) {
+        double score = SVM(1, 0.01).predictOne(sample.data, classifiers[digit].W, classifiers[digit].B);
+        allScores[digit] = score;
 
-       canvas.onmousedown = (e) => {
-           isDrawing = true;
-           const rect = canvas.getBoundingClientRect();
-           ctx.beginPath();
-           ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-       };
-
-       canvas.onmousemove = (e) => {
-           if (!isDrawing) return;
-           const rect = canvas.getBoundingClientRect();
-           ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-           ctx.stroke();
-       };
-
-       canvas.onmouseup = () => isDrawing = false;
-       canvas.onmouseleave = () => isDrawing = false;
-
-       function clearCanvas() {
-           ctx.fillStyle = 'white';
-           ctx.fillRect(0, 0, canvas.width, canvas.height);
-           document.getElementById('prediction').textContent = '';
-       }
-
-       async function predict() {
-           const tempCanvas = document.createElement('canvas');
-           tempCanvas.width = 28;
-           tempCanvas.height = 28;
-           const tempCtx = tempCanvas.getContext('2d');
-
-           tempCtx.drawImage(canvas, 0, 0, 28, 28);
-           const imageData = tempCtx.getImageData(0, 0, 28, 28);
-
-           const pixels = [];
-           for (let i = 0; i < imageData.data.length; i += 4) {
-               const grayscale = (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
-               pixels.push(grayscale / 255);
-           }
-
-           try {
-               const response = await fetch('/predict', {
-                   method: 'POST',
-                   headers: { 'Content-Type': 'application/json' },
-                   body: JSON.stringify({ image: pixels })
-               });
-
-               const data = await response.json();
-               document.getElementById('prediction').textContent =
-                   'Prediction: ' + data.prediction;
-           } catch (error) {
-               console.error('Prediction failed:', error);
-           }
-       }
-   </script>
-</body>
-</html>)DELIMITER";
+        if(score > bestScore) {
+            bestScore = score;
+            prediction = digit;
+        }
+    }
 }
 
 int main() {
-   const int numTrainImages = 60000;
-   const int numTestImages = 10000;
-   const int imageRows = 28;
-   const int imageCols = 28;
-   const double learningRate = 0.00007;
-   const double cost = .01;
-   const int numEpochs = 7;
+    // Parameters
+    const int numTrainImages = 60000;
+    const int numTestImages = 10000;
+    const int imageRows = 28;
+    const int imageCols = 28;
+    const double learningRate = 0.00007;
+    const double cost = .008;
+    const int numEpochs = 7;
 
     crow::SimpleApp app;
-    SVMMulti multiSvm(learningRate, cost);
 
-   auto trainImages = readMNISTImages("set1-images.idx3-ubyte", numTrainImages, imageRows, imageCols);
-   auto trainLabels = readMNISTLabels("set1-labels.idx1-ubyte", numTrainImages);
-   auto trainData = convertToMNSTDataFormat(trainImages, trainLabels);
+    auto trainImages = readMNISTImages("set1-images.idx3-ubyte", numTrainImages, imageRows, imageCols);
+    auto trainLabels = readMNISTLabels("set1-labels.idx1-ubyte", numTrainImages);
+    auto trainData = convertToMNSTDataFormat(trainImages, trainLabels);
 
-   auto testImages = readMNISTImages("Testing-Data-Images.idx3-ubyte", numTestImages, imageRows, imageCols);
-   auto testLabels = readMNISTLabels("TestingData-labels.idx1-ubyte", numTestImages);
-   auto testData = convertToMNSTDataFormat(testImages, testLabels);
+    auto testImages = readMNISTImages("Testing-Data-Images.idx3-ubyte", numTestImages, imageRows, imageCols);
+    auto testLabels = readMNISTLabels("TestingData-labels.idx1-ubyte", numTestImages);
+    auto testData = convertToMNSTDataFormat(testImages, testLabels);
 
     auto classifiers = initializeSVMClassifiers(imageRows * imageCols);
 
+    SVMMulti multiSvm(learningRate, cost);
     multiSvm.train(trainData, classifiers, numEpochs);
+
+    // Evaluate on test set
+    cout << "Evaluating model..." << endl;
     evaluateModel(testData, classifiers);
 
+    SVMPersistence::SaveSVMData(classifiers, "../models.bin");
 
-   return 0;
+
+    CROW_ROUTE(app, "/mnist.jsx")
+    ([]() {
+    std::ifstream file("web/mnist.jsx");
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return crow::response(buffer.str());
+});
+
+    CROW_ROUTE(app, "/")
+    ([&trainData, &classifiers]() {
+    // First, get 9 random samples and their predictions
+    std::vector<size_t> indices(trainData.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(indices.begin(), indices.end(), g);
+
+    // Create the JSON data string
+    std::stringstream jsonData;
+    jsonData << "window.initialMNISTData = [";
+
+    for (size_t i = 0; i < 9; i++) {
+        const auto& sample = trainData[indices[i]];
+        int prediction = -1;
+        std::vector<double> allScores(10);
+        evaluateSingleImage(sample, classifiers, prediction, allScores);
+
+        if (i > 0) jsonData << ",";
+        jsonData << "{\"data\":[";
+        for (size_t j = 0; j < sample.data.size(); ++j) {
+            if (j > 0) jsonData << ",";
+            jsonData << sample.data[j];
+        }
+        jsonData << "],\"prediction\":" << prediction << "}";
+    }
+    jsonData << "];";
+
+    crow::response res;
+    res.set_header("Content-Type", "text/html");
+    res.body = R"(
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>MNIST Visualization</title>
+            <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+            <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+            <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+            <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+        </head>
+        <body>
+            <div id="root">Loading...</div>
+            <script>)" + jsonData.str() + R"(</script>
+            <script type="text/babel">
+                const MNISTDigit = ({ imageData }) => {
+                    const canvasRef = React.useRef(null);
+
+                    React.useEffect(() => {
+                        const canvas = canvasRef.current;
+                        const ctx = canvas.getContext('2d');
+                        const imageDataObj = ctx.createImageData(28, 28);
+
+                        for (let i = 0; i < imageData.length; i++) {
+                            imageDataObj.data[i * 4] = imageData[i] * 255;
+                            imageDataObj.data[i * 4 + 1] = imageData[i] * 255;
+                            imageDataObj.data[i * 4 + 2] = imageData[i] * 255;
+                            imageDataObj.data[i * 4 + 3] = 255;
+                        }
+
+                        ctx.putImageData(imageDataObj, 0, 0);
+                    }, [imageData]);
+
+                    return (
+                        <canvas
+                            ref={canvasRef}
+                            width={28}
+                            height={28}
+                            className="w-24 h-24 border border-gray-300 bg-white"
+                            style={{ imageRendering: 'pixelated' }}
+                        />
+                    );
+                };
+
+                const MNISTGrid = () => {
+                    const [digits, setDigits] = React.useState(window.initialMNISTData || []);
+                    const [isLoading, setIsLoading] = React.useState(false);
+
+                    const handleShuffle = async () => {
+                        setIsLoading(true);
+                        try {
+                            const response = await fetch('/api/shuffle');
+                            const data = await response.json();
+                            setDigits(data.samples);
+                        } catch (error) {
+                            console.error('Error shuffling digits:', error);
+                        }
+                        setIsLoading(false);
+                    };
+
+                    return (
+                        <div className="max-w-2xl mx-auto p-6">
+                            <div className="bg-white rounded-lg shadow-lg">
+                                <div className="p-6">
+                                    <h2 className="text-2xl font-bold text-center mb-6">MNIST Digit Recognition</h2>
+                                    <div className="grid grid-cols-3 gap-4 mb-6">
+                                        {digits.map((digit, i) => (
+                                            <div key={i} className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
+                                                <MNISTDigit imageData={digit.data} />
+                                                <div className="mt-2 text-lg font-semibold">
+                                                    Prediction: {digit.prediction}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex justify-center">
+                                        <button
+                                            onClick={handleShuffle}
+                                            disabled={isLoading}
+                                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                                        >
+                                            {isLoading ? 'Loading...' : 'Shuffle Digits'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                };
+
+                const root = ReactDOM.createRoot(document.getElementById('root'));
+                root.render(<MNISTGrid />);
+            </script>
+        </body>
+        </html>
+    )";
+    return res;
+});
+
+
+    CROW_ROUTE(app, "/api/shuffle")
+    ([&trainData, &classifiers]() {
+    std::vector<size_t> indices(trainData.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(indices.begin(), indices.end(), g);
+
+    crow::json::wvalue result;
+    std::vector<crow::json::wvalue> samples;
+
+    for (size_t i = 0; i < 9; i++) {
+        const auto& sample = trainData[indices[i]];
+        int prediction = -1;
+        std::vector<double> allScores(10);
+        evaluateSingleImage(sample, classifiers, prediction, allScores);
+
+        crow::json::wvalue entry;
+        entry["data"] = std::vector<double>(sample.data.begin(), sample.data.end());
+        entry["prediction"] = prediction;
+        samples.push_back(std::move(entry));
+    }
+
+    result["samples"] = std::move(samples);
+    return crow::response(result);
+});
+
+    app.port(3000).run();
+
+
+
+    return 0;
 }
