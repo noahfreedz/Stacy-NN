@@ -43,7 +43,7 @@
 using namespace Stacy;
 
 #pragma region Neural Network Constructors
-// | @sum Defualt Constructor for Neural Network
+// | @sum Defualt Constructor for Neural_Network
 // | @inputs size of network, learning rate
 // | @dev creates new network based on parameters,
 // | randomly assigning weights & biases
@@ -124,7 +124,7 @@ void NeuralNetwork::propogate_network() {
 }
 
 void NeuralNetwork::print_network() {
-    std::cout << "Neural Network Structure:" << std::endl;
+    std::cout << "Neural_Network Structure:" << std::endl;
     std::cout << "===================================" << std::endl;
 
     for (int i = 0; i < network_weights.size(); ++i) {

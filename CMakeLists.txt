@@ -45,9 +45,9 @@ CPMAddPackage(
 )
 
 add_executable(Stacy_NN
-        "Neural Network/main.cpp"
-        "Neural Network/main.h"
-         "Neural Network/test_network.cpp")
+        Neural_Network/main.cpp
+        Neural_Network/main.h
+         Neural_Network/test_network.cpp)
 
 add_executable(SVMTEST
         SVM/SVM.cpp
@@ -56,7 +56,7 @@ add_executable(SVMTEST
 )
 
 target_include_directories(Stacy_NN PUBLIC
-        "Neural Network"
+        Neural_Network
         ${CMAKE_BINARY_DIR}/_deps/eigen-src
 )
 
