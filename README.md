@@ -1,5 +1,28 @@
-Stacy is an open-source neural network designed for handwritten number identification. Noah and I (Scott) were tasked with building a data processing system for a final project. We decided to majorly overcomplicate it and build a neural network using nothing but the standard C++ library and select other libraries for data management and visualization.
+Stacy: Support Vector Machine for MNIST Number Recognition
 
-After extensive research and coding, Rebecca was born. While Rebecca was quite rough, we managed to work out the major issues - the AI learned a bit, but fine-tuning remained elusive. We turned in the final project and received a 100%. Afterward, we decided to pivot.
 
-We created a new repository and renamed the model to Stacy. While keeping the core foundation of Rebecca, we're planning a complete rebuild. We have big plans for Stacy and are looking forward to everything we'll learn along the way. Rebecca remains a public library for anyone interested in checking it out - it can be found under Noah's profile as CSI-281-Final.
+Stacy is a Support Vector Machine (SVM) designed to recognize handwritten digits from the MNIST database. With two distinct modes of operation, Stacy provides an engaging and effective way to explore SVM-based digit recognition. Stacy achieves approximately 91% accuracy in identifying digits.
+
+Features
+
+1. Console Mode
+   
+   Prints a predicted number using ASCII characters.
+  
+   Outputs the recognized digit based on the MNIST dataset.
+  
+   Interactive and simple to use for exploring SVM predictions.
+  
+
+2. Web Mode
+   
+   Launches a local host server for an interactive UI.
+
+
+   Displays a 3x3 grid of MNIST digits.
+  
+   Allows users to shuffle the grid to test the recognition capabilities.
+  
+  
+   Outputs the identified digits for the shuffled grid.
+  
