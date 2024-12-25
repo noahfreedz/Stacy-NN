@@ -64,7 +64,7 @@ int main() {
         int prediction = -1;
         std::vector<double> allScores(10);
         SVM svm(1,0.01);
-        svm.evaluateSingleImage(sample, classifiers);
+        svm.evaluateSingleImage(sample, classifiers, prediction);
 
         if (i > 0) jsonData << ",";
         jsonData << "{\"data\":[";
@@ -192,7 +192,7 @@ int main() {
         int prediction = -1;
         std::vector<double> allScores(10);
         SVM svm(1,0.01);
-        svm.evaluateSingleImage(sample, classifiers);
+        svm.evaluateSingleImage(sample, classifiers, prediction);
 
         crow::json::wvalue entry;
         entry["data"] = std::vector<double>(sample.data.begin(), sample.data.end());

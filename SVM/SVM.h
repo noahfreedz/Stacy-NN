@@ -53,7 +53,7 @@ namespace stacy {
 
             vector<SVMData> initializeSVMClassifiers(int inputDim);
 
-            void evaluateSingleImage(const MNSTData& sample, const std::vector<SVMData>& classifiers);
+            void evaluateSingleImage(const MNSTData& sample, const std::vector<SVMData>& classifiers, int& prediction);
 
             void evaluateModel(const vector<MNSTData>& testData, const vector<SVMData>& classifiers);
 

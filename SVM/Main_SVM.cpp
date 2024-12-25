@@ -31,12 +31,13 @@ int main() {
     auto classifiers = svm.LoadSVMData("../models.bin");
 
     MNISTF printing(testData);
+    int trash = 1;
     while (true) {
         int number;
         std::cout << "Enter a number: ";
         std::cin >> number;
         printing.printImage(number);
-        svm.evaluateSingleImage(testData[number], classifiers);
+        svm.evaluateSingleImage(testData[number], classifiers,trash);
     }
 
 

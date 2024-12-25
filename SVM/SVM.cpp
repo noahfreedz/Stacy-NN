@@ -94,9 +94,9 @@ vector<MNSTData> stacy::SVM::convertToMNSTDataFormat(const vector<vector<double>
     return mnistData;
 }
 
-void stacy::SVM::evaluateSingleImage(const MNSTData& sample, const std::vector<SVMData>& classifiers) {
+void stacy::SVM::evaluateSingleImage(const MNSTData& sample, const std::vector<SVMData>& classifiers, int& prediction) {
                 double bestScore = -std::numeric_limits<double>::infinity();
-                int prediction = -1;
+                 prediction = -1;
 
                 // Get prediction from each classifier
                 for(int digit = 0; digit < 10; digit++) {
